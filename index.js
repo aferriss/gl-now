@@ -53,6 +53,8 @@ function createGLShell(options) {
     shell.clearColor = options.clearColor || [0,0,0,0]
     shell.clearDepth = options.clearDepth || 1.0
     shell.clearStencil = options.clearStencil || 0
+    shell.size = [ (shell._width / scale)|0, (shell._height / scale)|0];
+    shell.lastSize = shell.size;
 
     shell.on("resize", resize)
 
@@ -63,22 +65,28 @@ function createGLShell(options) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null)
       
       //Set viewport
-      gl.viewport(0, 0, (shell._width / scale)|0, (shell._height / scale)|0)
+      if(shell.size[0] != shell.lastSize[0] ||shell.size[1] != shell.lastSize[1]  ){
+        gl.viewport(0, 0, (shell._width / scale)|0, (shell._height / scale)|0)
+        shell.lastSize = [(shell._width / scale)|0, (shell._height / scale)|0];
+      }
 
       //Clear buffers
-      if(shell.clearFlags & gl.STENCIL_BUFFER_BIT) {
-        gl.clearStencil(shell.clearStencil)
+      if(options.doClear){
+        if(shell.clearFlags & gl.STENCIL_BUFFER_BIT) {
+          gl.clearStencil(shell.clearStencil)
+        }
+        if(shell.clearFlags & gl.COLOR_BUFFER_BIT) {
+          gl.clearColor(shell.clearColor[0], shell.clearColor[1], shell.clearColor[2], shell.clearColor[3])
+        }
+        if(shell.clearFlags & gl.DEPTH_BUFFER_BIT) {
+          gl.clearDepth(shell.clearDepth)
+        }
+        if(shell.clearFlags) {
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+        }
       }
-      if(shell.clearFlags & gl.COLOR_BUFFER_BIT) {
-        gl.clearColor(shell.clearColor[0], shell.clearColor[1], shell.clearColor[2], shell.clearColor[3])
-      }
-      if(shell.clearFlags & gl.DEPTH_BUFFER_BIT) {
-        gl.clearDepth(shell.clearDepth)
-      }
-      if(shell.clearFlags) {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
-      }
-    
+      
+      shell.size = [(shell._width / scale)|0, (shell._height / scale)|0];
       //Render frame
       shell.emit("gl-render", t)
     })
